@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
-
-	"github.com/commit-and-quit/yango-todo/tests"
 )
 
 type Task struct {
@@ -25,15 +23,18 @@ func GetDBFile() string {
 	if len(envFile) > 0 {
 		return envFile
 	}
-	_, DBFile := filepath.Split(tests.DBFile)
-	return DBFile
+	appPath, err := os.Executable()
+	if err != nil {
+		panic("Can't exec os.Executable()")
+	}
+	DBFile := "scheduler.db"
+	return filepath.Join(filepath.Dir(appPath), DBFile)
 }
 
 func Connect() (*sql.DB, error) {
 	DBFile := GetDBFile()
 	db, err := sql.Open("sqlite", DBFile)
 	if err != nil {
-		log.Print(err)
 		return db, err
 	}
 	return db, nil
@@ -41,38 +42,27 @@ func Connect() (*sql.DB, error) {
 
 func CreateDB() bool {
 	DBFile := GetDBFile()
-	log.Print("started CreateDB")
-	appPath, err := os.Executable()
-	log.Printf("DBFile in db: %v", DBFile)
-	if err != nil {
-		log.Print(err)
-	}
-	DBFile = filepath.Join(filepath.Dir(appPath), DBFile)
-	log.Print(DBFile)
-	_, err = os.Stat(DBFile)
-
+	_, err := os.Stat(DBFile)
 	var install bool
 	if err != nil {
 		install = true
 	}
 
 	if install {
-		log.Printf("install is true, file %v", DBFile)
+		log.Printf("DBfile wasn't found. Will try to create DB at %v", DBFile)
 		db, err := Connect()
 		if err != nil {
-			log.Print(err)
-			return false
+			panic(err)
 		}
 		defer db.Close()
 		_, err = db.Exec("CREATE TABLE `scheduler` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `date` TEXT NOT NULL, `title` TEXT NOT NULL, `comment` TEXT NULL, `repeat` TEXT(128) NULL)")
 
 		if err != nil {
-			log.Print(err)
-			return false
+			panic(err)
 		}
-		log.Print("created")
+		log.Print("Success")
 	} else {
-		log.Print("install is false")
+		log.Printf("DBfile exists: %s", DBFile)
 	}
 	return true
 }

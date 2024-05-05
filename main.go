@@ -19,10 +19,10 @@ func main() {
 	webDir := "./web/"
 	http.Handle("/", http.FileServer(http.Dir(webDir)))
 	http.HandleFunc(`/api/nextdate`, httpHandler.ApiNextDate)
-	http.HandleFunc(`/api/task`, httpHandler.ApiTask)
-	http.HandleFunc(`/api/tasks`, httpHandler.ApiTasks)
-	http.HandleFunc(`/api/task/done`, httpHandler.ApiTaskDone)
-
+	http.HandleFunc(`/api/task`, httpHandler.CheckAuth(httpHandler.ApiTask))
+	http.HandleFunc(`/api/tasks`, httpHandler.CheckAuth(httpHandler.ApiTasks))
+	http.HandleFunc(`/api/task/done`, httpHandler.CheckAuth(httpHandler.ApiTaskDone))
+	http.HandleFunc(`/api/signin`, httpHandler.ApiSignIn)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		panic(err)

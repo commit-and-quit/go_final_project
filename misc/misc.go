@@ -2,7 +2,6 @@ package misc
 
 import (
 	"errors"
-	"log"
 	"os"
 	"regexp"
 	"slices"
@@ -225,7 +224,6 @@ func CalcDateForDB(task *db.Task) (bool, error) {
 			}
 		}
 	}
-	log.Printf("Task: %v Calculated date: %v", task, taskDateForDB)
 	task.Date = taskDateForDB
 	return true, nil
 }

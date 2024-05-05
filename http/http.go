@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/commit-and-quit/yango-todo/auth"
 	"github.com/commit-and-quit/yango-todo/db"
 	"github.com/commit-and-quit/yango-todo/misc"
 )
@@ -222,4 +224,55 @@ func ApiTaskDone(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(httpCode)
 	w.Write(resp)
+}
+
+func ApiSignIn(w http.ResponseWriter, req *http.Request) {
+	getResp := func(req *http.Request) (httpCode int, resp []byte) {
+		var userInput map[string]string
+		var buf bytes.Buffer
+		_, err := buf.ReadFrom(req.Body)
+		if err != nil {
+			return http.StatusBadRequest, ErrToBytes(err)
+		}
+		if err = json.Unmarshal(buf.Bytes(), &userInput); err != nil {
+			return http.StatusBadRequest, ErrToBytes(err)
+		}
+		pass, err := auth.GetPass()
+		if err != nil {
+			return http.StatusOK, []byte("")
+		}
+		if pass != userInput["password"] {
+			return http.StatusOK, ErrToBytes(errors.New("неверный пароль"))
+		}
+		signedToken, err := auth.GetSignedToken()
+		if err != nil {
+			return http.StatusOK, ErrToBytes(err)
+		}
+		return http.StatusOK, []byte(fmt.Sprintf("{\"token\" : \"%s\"}", signedToken))
+	}
+
+	httpCode, resp := getResp(req)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(httpCode)
+	w.Write(resp)
+
+}
+
+func CheckAuth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pass := os.Getenv("TODO_PASSWORD")
+		if len(pass) > 0 {
+			var jwt string
+			cookie, err := r.Cookie("token")
+			if err == nil {
+				jwt = cookie.Value
+			}
+			valid := auth.VerifyUser(jwt)
+			if !valid {
+				http.Error(w, "Authentification required", http.StatusUnauthorized)
+				return
+			}
+		}
+		next(w, r)
+	})
 }
