@@ -1,5 +1,6 @@
-# docker run -v /tmp/db/:/usr/share/app/db/ -p 7540:7540 <image>
-
+# env GOOS=linux GOARCH=386 go build -o todo-linux
+# docker build . -t <image_name>
+# docker run -d --name todo -v /tmp/db/:/usr/share/app/db/ -p 7540:7540 <image_name>
 
 FROM ubuntu:latest
 
