@@ -14,7 +14,11 @@ func main() {
 
 	port := misc.GetPort()
 
-	db.CreateDB()
+	dbConnection, err := db.Init()
+	if err != nil {
+		panic(err)
+	}
+	db.Db = dbConnection
 
 	webDir := "./web/"
 	http.Handle("/", http.FileServer(http.Dir(webDir)))
@@ -23,8 +27,9 @@ func main() {
 	http.HandleFunc(`/api/tasks`, httpHandler.CheckAuth(httpHandler.ApiTasks))
 	http.HandleFunc(`/api/task/done`, httpHandler.CheckAuth(httpHandler.ApiTaskDone))
 	http.HandleFunc(`/api/signin`, httpHandler.ApiSignIn)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		panic(err)
 	}
+	defer db.Db.Close()
 }

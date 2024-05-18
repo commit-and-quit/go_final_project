@@ -66,14 +66,14 @@ func RepeatParser(repeat string) ([][]int, error) {
 
 func NextDate(now time.Time, date string, repeat string) (string, error) {
 	//m 25,26,7
-	repeatRegEx := "d [0-9]+|y|w [1-7,]+|m [-,0-9]+( [,0-9]+)?"
+	repeatRegEx, _ := regexp.Compile("d [0-9]+|y|w [1-7,]+|m [-,0-9]+( [,0-9]+)?")
 
 	taskDate, err := time.Parse("20060102", date)
 	if err != nil {
 		return "", err
 	}
 
-	repeatIsValid, _ := regexp.MatchString(repeatRegEx, repeat)
+	repeatIsValid := repeatRegEx.MatchString(repeat)
 	if !repeatIsValid {
 		return "", errors.New("некорректный формат повторения")
 	}
